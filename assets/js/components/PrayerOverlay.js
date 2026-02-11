@@ -52,7 +52,7 @@ const PrayerOverlay = {
             return this.engine.DISPLAY_NAMES[prayer] || prayer || '';
         },
         overlayClass() {
-            return `overlay-${(this.engine.state.value || '').toLowerCase()}`;
+            return `prayer-overlay-${(this.engine.state.value || '').toLowerCase()}`;
         }
     }
 };

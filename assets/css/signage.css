@@ -209,7 +209,7 @@ body {
 .slide-image img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
 }
 
 /* Video slides */
@@ -218,6 +218,7 @@ body {
     height: 100%;
     background-color: #000;
     border-radius: var(--radius-lg);
+    object-fit: cover;
 }
 
 .slide-video iframe {
