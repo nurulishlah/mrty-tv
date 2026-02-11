@@ -18,7 +18,7 @@ $settings = MRTY_TV::get_settings();
     <title>Digital Signage - <?php bloginfo( 'name' ); ?></title>
 
     <!-- IcoFont icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/icofont@1.0.0/icofont.min.css">
+    <link rel="stylesheet" href="<?php echo esc_url( MRTY_TV_URL . 'assets/css/icofont.css' ); ?>">
 
     <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -92,12 +92,16 @@ $settings = MRTY_TV::get_settings();
 
     <!-- Settings for Vue (passed from PHP) -->
     <script>
+        <?php
+        $custom_logo_id = get_theme_mod( 'custom_logo' );
+        $logo_url = $custom_logo_id ? wp_get_attachment_image_url( $custom_logo_id, 'full' ) : '';
+        ?>
         window.mrtyTvSettings = <?php echo wp_json_encode( array(
             'restUrl'          => esc_url_raw( rest_url( 'mrty-tv/v1' ) ),
             'siteName'         => get_bloginfo( 'name' ),
             'siteDesc'         => get_bloginfo( 'description' ),
             'address'          => get_theme_mod( 'alamat_masjid', '' ),
-            'logoUrl'          => get_theme_mod( 'logo_masjid', '' ),
+            'logoUrl'          => $logo_url,
             'runningText'      => wp_strip_all_tags( get_theme_mod( 'run_text', '' ) ),
             'city_id'          => absint( get_theme_mod( 'idsholat_id', '8' ) ),
 

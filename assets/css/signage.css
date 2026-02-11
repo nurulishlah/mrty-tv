@@ -149,12 +149,13 @@ body {
     text-align: right;
 }
 
-.clock-display {
-    font-size: 4rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
+.clock-display,
+.time-now {
+    font-size: 5rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
     color: var(--clr-text);
-    line-height: 1;
+    line-height: 0.9;
     text-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
@@ -572,7 +573,7 @@ body {
     font-weight: 600;
     color: var(--clr-text);
     padding-left: 100%;
-    animation: marquee 30s linear infinite;
+    animation: marquee 120s linear infinite;
 }
 
 .running-icon {
@@ -612,8 +613,9 @@ body {
         gap: 18px;
     }
 
-    .clock-display {
-        font-size: 3rem;
+    .clock-display,
+    .time-now {
+        font-size: 4rem;
     }
 
     .mosque-name {
@@ -706,8 +708,9 @@ body {
         font-size: 0.65rem;
     }
 
-    .clock-display {
-        font-size: 1.8rem;
+    .clock-display,
+    .time-now {
+        font-size: 3rem;
     }
 
     .date-display {
@@ -1056,4 +1059,16 @@ body {
     font-size: 1.5rem;
     font-variant-numeric: tabular-nums;
     color: rgba(255, 255, 255, 0.08);
+}
+
+/* Hotfix for padding and clock layout */
+#app {
+    padding: 0 !important;
+    display: block !important;
+}
+
+.signage-header .clock-widget {
+    flex-shrink: 0;
+    min-width: max-content;
+    text-align: right;
 }

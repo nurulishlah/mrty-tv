@@ -9,7 +9,7 @@ const PrayerSidebar = {
                     v-for="prayer in engine.prayerList.value"
                     :key="prayer.key"
                     class="prayer-item"
-                    :class="{ 'is-next': prayer.isNext, 'is-current': prayer.isCurrent }"
+                    :class="{ 'is-next': prayer.isNext, 'is-current': prayer.isCurrent, 'active': prayer.isNext || prayer.isCurrent }"
                 >
                     <div class="prayer-label">
                         <i class="prayer-icon" :class="prayer.icon"></i>
