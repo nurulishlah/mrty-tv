@@ -1,0 +1,396 @@
+<?php
+/**
+ * Plugin Name: MRTY TV
+ * Description: Vue 3 digital signage display for Masjid Raya Taman Yasmin. Access via /signage
+ * Version: 1.0.0
+ * Author: Muhamad Ishlah
+ * Text Domain: mrty-tv
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+define( 'MRTY_TV_PATH', plugin_dir_path( __FILE__ ) );
+define( 'MRTY_TV_URL', plugin_dir_url( __FILE__ ) );
+define( 'MRTY_TV_VERSION', '1.0.0' );
+
+class MRTY_TV {
+
+	/**
+	 * Default prayer engine settings.
+	 */
+	const DEFAULTS = array(
+		'approaching_mins' => 10,
+		'adzan_duration'   => 2,
+		'iqamah_duration'  => 10,
+		'sholat_duration'  => 15,
+		'adj_fajr'         => 0,
+		'adj_sunrise'      => 0,
+		'adj_dhuhr'        => 0,
+		'adj_asr'          => 0,
+		'adj_maghrib'      => 0,
+		'adj_isha'         => 0,
+	);
+
+	const HASH_TRANSIENT_KEY = 'mrty_tv_content_hash';
+
+	public function __construct() {
+		add_action( 'init', array( $this, 'add_endpoint' ) );
+		add_action( 'template_redirect', array( $this, 'template_redirect' ) );
+		add_filter( 'template_include', array( $this, 'load_template' ) );
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
+
+		// Invalidate content hash cache on relevant changes
+		add_action( 'save_post', array( $this, 'invalidate_hash_cache' ) );
+		add_action( 'delete_post', array( $this, 'invalidate_hash_cache' ) );
+		add_action( 'update_option_mrty_tv_options', array( $this, 'invalidate_hash_cache' ) );
+	}
+
+	/**
+	 * Delete the cached content hash so the next poll recomputes it.
+	 */
+	public function invalidate_hash_cache() {
+		delete_transient( self::HASH_TRANSIENT_KEY );
+	}
+
+	public function add_endpoint() {
+		add_rewrite_endpoint( 'signage', EP_ROOT );
+	}
+
+	public function template_redirect() {
+		global $wp_query;
+		if ( isset( $wp_query->query_vars['signage'] ) ) {
+		}
+	}
+
+	public function load_template( $template ) {
+		global $wp_query;
+		if ( isset( $wp_query->query_vars['signage'] ) ) {
+			$new_template = MRTY_TV_PATH . 'templates/signage-view.php';
+			if ( file_exists( $new_template ) ) {
+				return $new_template;
+			}
+		}
+		return $template;
+	}
+
+	// -------------------------------------------------------
+	// REST API
+	// -------------------------------------------------------
+
+	public function register_rest_routes() {
+		register_rest_route( 'mrty-tv/v1', '/content-hash', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_content_hash' ),
+			'permission_callback' => '__return_true',
+		) );
+
+		register_rest_route( 'mrty-tv/v1', '/settings', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_settings_api' ),
+			'permission_callback' => '__return_true',
+		) );
+
+		register_rest_route( 'mrty-tv/v1', '/slides', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_slides_api' ),
+			'permission_callback' => '__return_true',
+		) );
+	}
+
+	/**
+	 * Return the content hash, cached as a transient for performance.
+	 */
+	public function get_content_hash() {
+		$hash = get_transient( self::HASH_TRANSIENT_KEY );
+
+		if ( false === $hash ) {
+			$hash = $this->compute_content_hash();
+			set_transient( self::HASH_TRANSIENT_KEY, $hash, 120 );
+		}
+
+		return rest_ensure_response( array(
+			'hash' => $hash,
+			'time' => current_time( 'mysql' ),
+		) );
+	}
+
+	/**
+	 * Return settings as JSON for reactive updates (no page reload).
+	 */
+	public function get_settings_api() {
+		return rest_ensure_response( self::get_settings() );
+	}
+
+	/**
+	 * Return slides data as JSON so Vue can render them reactively.
+	 */
+	public function get_slides_api() {
+		$slides = array();
+
+		// Image slides
+		$image_slides = get_posts( array(
+			'post_type'      => 'slide',
+			'posts_per_page' => 20,
+			'post_status'    => 'publish',
+			'orderby'        => 'menu_order',
+			'order'          => 'ASC',
+		) );
+		foreach ( $image_slides as $slide ) {
+			$thumb = get_the_post_thumbnail_url( $slide->ID, 'full' );
+			if ( $thumb ) {
+				$slides[] = array(
+					'id'   => $slide->ID,
+					'type' => 'image',
+					'src'  => $thumb,
+					'alt'  => esc_attr( $slide->post_title ),
+				);
+			}
+		}
+
+		// Video slides
+		$video_slides = get_posts( array(
+			'post_type'      => 'video',
+			'posts_per_page' => 10,
+			'post_status'    => 'publish',
+		) );
+		foreach ( $video_slides as $video ) {
+			$url = get_post_meta( $video->ID, '_video_url', true );
+			if ( $url ) {
+				$slides[] = array(
+					'id'   => $video->ID,
+					'type' => 'video',
+					'src'  => esc_url( $url ),
+					'alt'  => esc_attr( $video->post_title ),
+				);
+			}
+		}
+
+		// Campaign slides
+		if ( post_type_exists( 'sf_campaign' ) ) {
+			$campaigns = get_posts( array(
+				'post_type'      => 'sf_campaign',
+				'posts_per_page' => 10,
+				'post_status'    => 'publish',
+			) );
+			foreach ( $campaigns as $campaign ) {
+				$target    = (float) get_post_meta( $campaign->ID, '_sf_target', true );
+				$collected = (float) get_post_meta( $campaign->ID, '_sf_collected', true );
+				$slides[]  = array(
+					'id'        => $campaign->ID,
+					'type'      => 'campaign',
+					'title'     => esc_html( $campaign->post_title ),
+					'target'    => $target,
+					'collected' => $collected,
+					'progress'  => $target > 0 ? round( ( $collected / $target ) * 100, 1 ) : 0,
+					'image'     => get_the_post_thumbnail_url( $campaign->ID, 'full' ),
+					'qris'      => get_post_meta( $campaign->ID, '_sf_qris_url', true ),
+				);
+			}
+		}
+
+		return rest_ensure_response( $slides );
+	}
+
+	/**
+	 * Compute the content hash from all relevant data sources.
+	 */
+	private function compute_content_hash() {
+		$hash_parts = array();
+
+		$post_types = array( 'slide', 'video', 'sf_campaign', 'pengumuman', 'agenda', 'infaq', 'wakaf' );
+		foreach ( $post_types as $pt ) {
+			$posts = get_posts( array(
+				'post_type'      => $pt,
+				'posts_per_page' => 10,
+				'orderby'        => 'modified',
+				'order'          => 'DESC',
+				'post_status'    => 'publish',
+				'fields'         => 'ids',
+			) );
+			foreach ( $posts as $pid ) {
+				$hash_parts[] = $pid . ':' . get_post_modified_time( 'U', true, $pid );
+			}
+		}
+
+		$hash_parts[] = 'run_text:' . get_theme_mod( 'run_text', '' );
+
+		foreach ( array( 'slide', 'video', 'sf_campaign' ) as $pt ) {
+			$count = wp_count_posts( $pt );
+			$hash_parts[] = $pt . '_count:' . ( isset( $count->publish ) ? $count->publish : 0 );
+		}
+
+		$settings = self::get_settings();
+		$hash_parts[] = 'settings:' . md5( serialize( $settings ) );
+
+		return md5( implode( '|', $hash_parts ) );
+	}
+
+	// -------------------------------------------------------
+	// Admin Settings
+	// -------------------------------------------------------
+
+	public function add_admin_menu() {
+		add_options_page(
+			'MRTY TV',
+			'MRTY TV',
+			'manage_options',
+			'mrty-tv',
+			array( $this, 'render_settings_page' )
+		);
+	}
+
+	public function register_settings() {
+		register_setting( 'mrty_tv_settings', 'mrty_tv_options', array(
+			'sanitize_callback' => array( $this, 'sanitize_settings' ),
+			'default'           => self::DEFAULTS,
+		) );
+
+		add_settings_section(
+			'mrty_tv_prayer_engine',
+			'Prayer Engine',
+			function () {
+				echo '<p>Atur durasi untuk setiap tahapan waktu sholat pada Digital Signage.</p>';
+			},
+			'mrty-tv'
+		);
+
+		$fields = array(
+			'approaching_mins' => array(
+				'label' => 'Waktu Menjelang Sholat (menit)',
+				'desc'  => 'Berapa menit sebelum waktu sholat layar menampilkan countdown besar.',
+			),
+			'adzan_duration' => array(
+				'label' => 'Durasi Adzan (menit)',
+				'desc'  => 'Berapa lama tampilan adzan ditampilkan.',
+			),
+			'iqamah_duration' => array(
+				'label' => 'Durasi Iqamah (menit)',
+				'desc'  => 'Berapa lama countdown iqamah ditampilkan setelah adzan.',
+			),
+			'sholat_duration' => array(
+				'label' => 'Durasi Sholat (menit)',
+				'desc'  => 'Berapa lama layar dimatikan (hitam) selama sholat berlangsung.',
+			),
+		);
+
+		foreach ( $fields as $key => $field ) {
+			add_settings_field(
+				'mrty_tv_' . $key,
+				$field['label'],
+				function () use ( $key, $field ) {
+					$options = self::get_settings();
+					$val = isset( $options[ $key ] ) ? $options[ $key ] : self::DEFAULTS[ $key ];
+					printf(
+						'<input type="number" name="mrty_tv_options[%s]" value="%s" min="1" max="60" class="small-text" /> <span class="description">%s</span>',
+						esc_attr( $key ),
+						esc_attr( $val ),
+						esc_html( $field['desc'] )
+					);
+				},
+				'mrty-tv',
+				'mrty_tv_prayer_engine'
+			);
+		}
+
+		// --- Prayer Time Adjustment Section ---
+		add_settings_section(
+			'mrty_tv_time_adjust',
+			'Koreksi Waktu Sholat',
+			function () {
+				echo '<p>Koreksi waktu sholat dalam menit. Nilai positif = mundurkan, negatif = majukan. Contoh: <code>+2</code> berarti mundur 2 menit.</p>';
+			},
+			'mrty-tv'
+		);
+
+		$adj_fields = array(
+			'adj_fajr'    => 'Subuh',
+			'adj_sunrise' => 'Terbit',
+			'adj_dhuhr'   => 'Dzuhur',
+			'adj_asr'     => 'Ashar',
+			'adj_maghrib' => 'Maghrib',
+			'adj_isha'    => 'Isya',
+		);
+
+		foreach ( $adj_fields as $key => $label ) {
+			add_settings_field(
+				'mrty_tv_' . $key,
+				$label,
+				function () use ( $key ) {
+					$options = self::get_settings();
+					$val = isset( $options[ $key ] ) ? $options[ $key ] : 0;
+					printf(
+						'<input type="number" name="mrty_tv_options[%s]" value="%s" min="-30" max="30" class="small-text" /> <span class="description">menit</span>',
+						esc_attr( $key ),
+						esc_attr( $val )
+					);
+				},
+				'mrty-tv',
+				'mrty_tv_time_adjust'
+			);
+		}
+	}
+
+	public function sanitize_settings( $input ) {
+		$output = array();
+
+		// Engine duration fields (positive only, 1-60)
+		$duration_keys = array( 'approaching_mins', 'adzan_duration', 'iqamah_duration', 'sholat_duration' );
+		foreach ( $duration_keys as $key ) {
+			$output[ $key ] = isset( $input[ $key ] ) ? absint( $input[ $key ] ) : self::DEFAULTS[ $key ];
+			if ( $output[ $key ] < 1 ) $output[ $key ] = self::DEFAULTS[ $key ];
+			if ( $output[ $key ] > 60 ) $output[ $key ] = 60;
+		}
+
+		// Adjustment fields (can be negative, -30 to +30)
+		$adj_keys = array( 'adj_fajr', 'adj_sunrise', 'adj_dhuhr', 'adj_asr', 'adj_maghrib', 'adj_isha' );
+		foreach ( $adj_keys as $key ) {
+			$output[ $key ] = isset( $input[ $key ] ) ? intval( $input[ $key ] ) : 0;
+			$output[ $key ] = max( -30, min( 30, $output[ $key ] ) );
+		}
+
+		return $output;
+	}
+
+	public function render_settings_page() {
+		if ( ! current_user_can( 'manage_options' ) ) return;
+		?>
+		<div class="wrap">
+			<h1>MRTY TV Settings</h1>
+			<form method="post" action="options.php">
+				<?php
+				settings_fields( 'mrty_tv_settings' );
+				do_settings_sections( 'mrty-tv' );
+				submit_button( 'Simpan Pengaturan' );
+				?>
+			</form>
+			<hr>
+			<p><a href="<?php echo esc_url( home_url( '/signage' ) ); ?>" target="_blank">🖥️ Buka Tampilan Signage &rarr;</a></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get prayer engine settings with defaults.
+	 */
+	public static function get_settings() {
+		$options = get_option( 'mrty_tv_options', array() );
+		return wp_parse_args( $options, self::DEFAULTS );
+	}
+
+	// -------------------------------------------------------
+	// Activation
+	// -------------------------------------------------------
+
+	public static function activate() {
+		add_rewrite_endpoint( 'signage', EP_ROOT );
+		flush_rewrite_rules();
+	}
+}
+
+$mrty_tv = new MRTY_TV();
+register_activation_hook( __FILE__, array( 'MRTY_TV', 'activate' ) );
+register_deactivation_hook( __FILE__, 'flush_rewrite_rules' );
