@@ -10,7 +10,7 @@ function useSlider(engineState) {
     const isLoading = ref(true);
     const isPaused = ref(false);
 
-    const DURATIONS = { image: 8000, video: 30000, campaign: 12000 };
+    const DURATIONS = { image: 8000, video: 30000, campaign: 20000 };
 
     let timerId = null;
 

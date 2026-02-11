@@ -158,7 +158,7 @@ class MRTY_TV {
 			'post_status'    => 'publish',
 		) );
 		foreach ( $video_slides as $video ) {
-			$url = get_post_meta( $video->ID, '_video_url', true );
+			$url = get_post_meta( $video->ID, 'video_embed', true );
 			if ( $url ) {
 				$slides[] = array(
 					'id'   => $video->ID,
@@ -177,8 +177,8 @@ class MRTY_TV {
 				'post_status'    => 'publish',
 			) );
 			foreach ( $campaigns as $campaign ) {
-				$target    = (float) get_post_meta( $campaign->ID, '_sf_target', true );
-				$collected = (float) get_post_meta( $campaign->ID, '_sf_collected', true );
+				$target    = (float) get_post_meta( $campaign->ID, '_sf_goal', true );
+				$collected = function_exists('sf_get_campaign_total') ? sf_get_campaign_total($campaign->ID) : (float) get_post_meta( $campaign->ID, '_sf_collected', true );
 				$slides[]  = array(
 					'id'        => $campaign->ID,
 					'type'      => 'campaign',
@@ -186,8 +186,11 @@ class MRTY_TV {
 					'target'    => $target,
 					'collected' => $collected,
 					'progress'  => $target > 0 ? round( ( $collected / $target ) * 100, 1 ) : 0,
-					'image'     => get_the_post_thumbnail_url( $campaign->ID, 'full' ),
-					'qris'      => get_post_meta( $campaign->ID, '_sf_qris_url', true ),
+					'image'          => get_the_post_thumbnail_url( $campaign->ID, 'full' ),
+					'qris'           => ( $qris_id = get_post_meta( $campaign->ID, '_sf_qris_image', true ) ) ? wp_get_attachment_url( $qris_id ) : '',
+					'bank_name'      => get_post_meta( $campaign->ID, '_sf_bank_name', true ),
+					'account_number' => get_post_meta( $campaign->ID, '_sf_account_number', true ),
+					'account_holder' => get_post_meta( $campaign->ID, '_sf_account_holder', true ),
 				);
 			}
 		}

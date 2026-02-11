@@ -151,7 +151,7 @@ body {
 
 .clock-display,
 .time-now {
-    font-size: 5rem;
+    font-size: 3rem;
     font-weight: 900;
     letter-spacing: -0.04em;
     color: var(--clr-text);
@@ -199,17 +199,31 @@ body {
 .slide-image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    background-color: #000;
     border-radius: var(--radius-lg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.slide-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 /* Video slides */
 .slide-video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    border: none;
+    background-color: #000;
     border-radius: var(--radius-lg);
+}
+
+.slide-video iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
 }
 
 /* Vue Transitions */

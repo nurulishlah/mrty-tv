@@ -4,7 +4,7 @@
 const ContentSlider = {
     template: `
         <div class="signage-slider">
-            <transition name="fade" mode="out-in">
+            <transition name="fade">
                 <div v-if="slider.currentSlide.value" :key="slider.currentIndex.value" class="slide-wrapper">
 
                     <!-- Image Slide -->
@@ -23,22 +23,57 @@ const ContentSlider = {
                     </div>
 
                     <!-- Campaign Slide -->
-                    <div v-else-if="slider.currentSlide.value.type === 'campaign'" class="slide slide-campaign">
-                        <div class="campaign-content" :style="campaignBg(slider.currentSlide.value.image)">
-                            <div class="campaign-overlay">
-                                <h2 class="campaign-title">{{ slider.currentSlide.value.title }}</h2>
-                                <div class="campaign-progress-wrap">
-                                    <div class="campaign-progress-bar">
-                                        <div class="campaign-progress-fill" :style="{ width: slider.currentSlide.value.progress + '%' }"></div>
+                    <div v-else-if="slider.currentSlide.value.type === 'campaign'" class="slide slide-campaign" :style="{ backgroundImage: 'url(' + slider.currentSlide.value.image + ')', backgroundSize: 'cover', backgroundPosition: 'center' }">
+                        <div class="campaign-slide-overlay"></div>
+                        <div class="campaign-slide-content">
+                            <!-- Header -->
+                            <div class="campaign-header">
+                                <h1 class="campaign-title">{{ slider.currentSlide.value.title }}</h1>
+                            </div>
+
+                            <!-- Body (2 Columns) -->
+                            <div class="campaign-body">
+                                <!-- Left: Progress -->
+                                <div class="campaign-left">
+                                    <div class="campaign-progress-section">
+                                        <h2>Progres</h2>
+                                        <div class="campaign-stats">
+                                            <div class="campaign-stat">
+                                                <span class="stat-label">Target</span>
+                                                <span class="stat-value">{{ formatCurrency(slider.currentSlide.value.target) }}</span>
+                                            </div>
+                                            <div class="campaign-stat">
+                                                <span class="stat-label">Terkumpul</span>
+                                                <span class="stat-value collected">{{ formatCurrency(slider.currentSlide.value.collected) }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="campaign-progress-bar">
+                                            <div class="progress-fill" :style="{ width: slider.currentSlide.value.progress + '%' }"></div>
+                                        </div>
+                                        <div class="campaign-progress-percent">{{ slider.currentSlide.value.progress }}%</div>
+                                        <!-- Link optional if available -->
                                     </div>
-                                    <span class="campaign-progress-text">{{ slider.currentSlide.value.progress }}%</span>
                                 </div>
-                                <div class="campaign-amounts">
-                                    <div class="campaign-collected">Terkumpul: {{ formatCurrency(slider.currentSlide.value.collected) }}</div>
-                                    <div class="campaign-target">Target: {{ formatCurrency(slider.currentSlide.value.target) }}</div>
-                                </div>
-                                <div v-if="slider.currentSlide.value.qris" class="campaign-qris">
-                                    <img :src="slider.currentSlide.value.qris" alt="QRIS" class="qris-image" />
+
+                                <!-- Right: Donate Info -->
+                                <div class="campaign-right">
+                                    <div class="campaign-donate-section">
+                                        <h2>Cara Donasi</h2>
+                                        <div class="donate-columns">
+                                            <div v-if="slider.currentSlide.value.qris" class="donate-col qris-col">
+                                                <p class="donate-label">Scan QRIS</p>
+                                                <img :src="slider.currentSlide.value.qris" alt="QRIS" class="qris-image" />
+                                            </div>
+                                            <div v-if="slider.currentSlide.value.bank_name && slider.currentSlide.value.account_number" class="donate-col bank-col">
+                                                <p class="donate-label">Transfer Bank</p>
+                                                <div class="bank-info">
+                                                    <div class="bank-name">{{ slider.currentSlide.value.bank_name }}</div>
+                                                    <div class="account-number">{{ slider.currentSlide.value.account_number }}</div>
+                                                    <div class="account-holder">a.n {{ slider.currentSlide.value.account_holder }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
