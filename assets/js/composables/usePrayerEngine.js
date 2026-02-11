@@ -4,7 +4,7 @@
  * States: NORMAL → APPROACHING → ADZAN → IQAMAH → SHOLAT → NORMAL
  * Sunrise exception: APPROACHING → NORMAL (skips adzan/iqamah/sholat)
  */
-const { ref, reactive, computed, watch, onMounted, onUnmounted, provide } = Vue;
+// Vue globals (ref, reactive, computed, watch, onMounted, onUnmounted, provide) provided by template setup script
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 const DISPLAY_NAMES = {
@@ -100,12 +100,12 @@ function usePrayerEngine(settings) {
     }
 
     function calculateWithCoords(lat, lng) {
-        if (typeof prayTimes === 'undefined') {
+        if (typeof PrayTimes === 'undefined') {
             console.error('[PrayerEngine] PrayTimes library not loaded');
             return;
         }
 
-        const pt = new prayTimes('Kemenag');
+        const pt = new PrayTimes('Kemenag');
         pt.adjust({ fajr: 20, isha: 18, highLats: 'AngleBased' });
 
         const today = new Date();

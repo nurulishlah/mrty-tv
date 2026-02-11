@@ -4,7 +4,6 @@
  */
 
 function useSlider(engineState) {
-    const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 
     const slides = ref([]);
     const currentIndex = ref(0);

@@ -118,6 +118,11 @@ $settings = MRTY_TV::get_settings();
     <!-- Vue 3 production build -->
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/lib/vue.global.prod.js' ); ?>"></script>
 
+    <!-- Vue globals (single destructure, shared by all files) -->
+    <script>
+        var { createApp, ref, reactive, computed, watch, watchEffect, onMounted, onUnmounted, provide, inject, nextTick } = Vue;
+    </script>
+
     <!-- PrayTimes library -->
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/lib/PrayTimes.js' ); ?>"></script>
 

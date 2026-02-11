@@ -4,7 +4,6 @@
  */
 
 function useAutoRefresh(settings) {
-    const { ref, onMounted, onUnmounted } = Vue;
 
     const POLL_INTERVAL = 30000;
     const FETCH_TIMEOUT = 5000;

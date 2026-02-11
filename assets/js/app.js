@@ -4,7 +4,7 @@
  * Initializes the Vue app with composables and components.
  * Settings are passed from PHP via window.mrtyTvSettings.
  */
-const { createApp, ref, provide } = Vue;
+// Vue globals (createApp, ref, provide) provided by template setup script
 
 const App = {
     template: `

@@ -2,7 +2,7 @@
  * useClock composable — Reactive clock and date display.
  * Updates every second via a single setInterval.
  */
-const { ref, onMounted, onUnmounted } = Vue;
+// Vue globals (ref, onMounted, onUnmounted) provided by template setup script
 
 function useClock() {
     const hours = ref('--');
