@@ -104,6 +104,8 @@ $settings = MRTY_TV::get_settings();
             'logoUrl'          => $logo_url,
             'runningText'      => wp_strip_all_tags( get_theme_mod( 'run_text', '' ) ),
             'city_id'          => absint( get_theme_mod( 'idsholat_id', '8' ) ),
+            'latitude'         => $settings['latitude'],
+            'longitude'        => $settings['longitude'],
 
             // Prayer engine settings
             'approaching_mins' => $settings['approaching_mins'],

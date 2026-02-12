@@ -74,6 +74,17 @@ function usePrayerEngine(settings) {
         // Skip if already calculated for today
         if (lastCalculatedDate.value === dateKey && timesLoaded.value) return;
 
+        // 1. Check for Manual Coordinates (Priority)
+        const manLat = parseFloat(settings.value.latitude);
+        const manLng = parseFloat(settings.value.longitude);
+
+        if (!isNaN(manLat) && !isNaN(manLng)) {
+            console.log('[PrayerEngine] Using manual coordinates:', manLat, manLng);
+            calculateWithCoords(manLat, manLng);
+            return;
+        }
+
+        // 2. Fallback to API
         const cityId = settings.value.city_id;
         if (!cityId || isNaN(Number(cityId))) {
             console.warn('[PrayerEngine] Invalid city_id, using fallback coords');

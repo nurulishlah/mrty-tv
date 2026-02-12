@@ -31,6 +31,8 @@ class MRTY_TV {
 		'adj_asr'          => 0,
 		'adj_maghrib'      => 0,
 		'adj_isha'         => 0,
+		'latitude'         => '',
+		'longitude'        => '',
 	);
 
 	const HASH_TRANSIENT_KEY = 'mrty_tv_content_hash';
@@ -299,6 +301,46 @@ class MRTY_TV {
 			);
 		}
 
+		// --- Manual Coordinates Section ---
+		add_settings_section(
+			'mrty_tv_coordinates',
+			'Koordinat Manual',
+			function () {
+				echo '<p>Isi jika ingin menggunakan koordinat manual (mengabaikan API). Kosongkan untuk auto-detect by ID Sholat.</p>';
+			},
+			'mrty-tv'
+		);
+
+		add_settings_field(
+			'mrty_tv_latitude',
+			'Latitude',
+			function () {
+				$options = self::get_settings();
+				$val = isset( $options['latitude'] ) ? $options['latitude'] : '';
+				printf(
+					'<input type="text" name="mrty_tv_options[latitude]" value="%s" class="regular-text" placeholder="-6.200000" />',
+					esc_attr( $val )
+				);
+			},
+			'mrty-tv',
+			'mrty_tv_coordinates'
+		);
+
+		add_settings_field(
+			'mrty_tv_longitude',
+			'Longitude',
+			function () {
+				$options = self::get_settings();
+				$val = isset( $options['longitude'] ) ? $options['longitude'] : '';
+				printf(
+					'<input type="text" name="mrty_tv_options[longitude]" value="%s" class="regular-text" placeholder="106.816666" />',
+					esc_attr( $val )
+				);
+			},
+			'mrty-tv',
+			'mrty_tv_coordinates'
+		);
+
 		// --- Prayer Time Adjustment Section ---
 		add_settings_section(
 			'mrty_tv_time_adjust',
@@ -354,6 +396,10 @@ class MRTY_TV {
 			$output[ $key ] = isset( $input[ $key ] ) ? intval( $input[ $key ] ) : 0;
 			$output[ $key ] = max( -30, min( 30, $output[ $key ] ) );
 		}
+
+		// Coordinates
+		$output['latitude']  = isset( $input['latitude'] ) ? sanitize_text_field( $input['latitude'] ) : '';
+		$output['longitude'] = isset( $input['longitude'] ) ? sanitize_text_field( $input['longitude'] ) : '';
 
 		return $output;
 	}
