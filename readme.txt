@@ -3,7 +3,7 @@ Contributors: muhamadishlah
 Tags: digital-signage, mosque, prayer-times, vue
 Requires at least: 5.9
 Tested up to: 6.7
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 Requires PHP: 7.4
 License: GPLv2 or later
 
@@ -36,6 +36,9 @@ Forked from WM Digital Signage with a complete frontend rewrite.
 * REST API endpoints for slides and settings
 
 == Changelog ==
+
+= 1.2.1 =
+* Fix: Prevent Prayer Engine state reset on content auto-refresh
 
 = 1.2.0 =
 * Feature: Modular Prayer Engine (Per-prayer Iqamah durations)

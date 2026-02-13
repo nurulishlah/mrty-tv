@@ -366,7 +366,9 @@ function usePrayerEngine(settings, simulatedNow) {
 
     // Watch for settings changes and recalculate
     watch(() => settings.value, () => {
-        lastCalculatedDate.value = null; // Force recalculation
+        // Do NOT nullify lastCalculatedDate here. It causes engineTick to pause 
+        // and triggers a fetch storm if fetchAndCalculate is async.
+        // Just trigger the update; existing times remain valid until replaced.
         fetchAndCalculate();
     }, { deep: true });
 
