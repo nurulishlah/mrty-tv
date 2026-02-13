@@ -30,9 +30,11 @@ class MRTY_TV {
 		'adj_dhuhr'        => 0,
 		'adj_asr'          => 0,
 		'adj_maghrib'      => 0,
-		'adj_isha'         => 0,
-		'latitude'         => '',
-		'longitude'        => '',
+
+		// Slider Limits
+		'limit_slide'      => 10,
+		'limit_video'      => 1, // Default to 1 (like wm-digisign)
+		'limit_campaign'   => 1, // Default to 1 (like wm-digisign)
 	);
 
 	const HASH_TRANSIENT_KEY = 'mrty_tv_content_hash';
@@ -180,12 +182,13 @@ class MRTY_TV {
 	}
 
 	public function get_slides_api() {
-		$slides = array();
+		$slides  = array();
+		$options = self::get_settings();
 
-		// Image slides
+		// 1. Image Slides
 		$image_slides = get_posts( array(
 			'post_type'      => 'slide',
-			'posts_per_page' => 20,
+			'posts_per_page' => $options['limit_slide'],
 			'post_status'    => 'publish',
 			'orderby'        => 'menu_order',
 			'order'          => 'ASC',
@@ -194,43 +197,71 @@ class MRTY_TV {
 			$thumb = get_the_post_thumbnail_url( $slide->ID, 'full' );
 			if ( $thumb ) {
 				$slides[] = array(
-					'id'   => $slide->ID,
-					'type' => 'image',
-					'src'  => $thumb,
-					'alt'  => esc_attr( $slide->post_title ),
+					'id'    => $slide->ID,
+					'type'  => 'image',
+					'src'   => $thumb,
+					'title' => $slide->post_title,
 				);
 			}
 		}
 
-		// Video slides
+		// 2. Video Slides
 		$video_slides = get_posts( array(
 			'post_type'      => 'video',
-			'posts_per_page' => 10,
+			'posts_per_page' => $options['limit_video'],
 			'post_status'    => 'publish',
+			'orderby'        => 'date',
+			'order'          => 'DESC',
 		) );
 		foreach ( $video_slides as $video ) {
+			// Try meta first, then content regex
 			$url = get_post_meta( $video->ID, 'video_embed', true );
+			if ( ! $url && preg_match( '/https?:\/\/[^\s"]+/', $video->post_content, $matches ) ) {
+				$url = $matches[0];
+			}
+
 			if ( $url ) {
 				$slides[] = array(
-					'id'   => $video->ID,
-					'type' => 'video',
-					'src'  => esc_url( $url ),
-					'alt'  => esc_attr( $video->post_title ),
+					'id'    => $video->ID,
+					'type'  => 'video',
+					'src'   => esc_url( $url ),
+					'title' => $video->post_title,
 				);
 			}
 		}
 
-		// Campaign slides
+		// 3. Campaign Slides
 		if ( post_type_exists( 'sf_campaign' ) ) {
 			$campaigns = get_posts( array(
 				'post_type'      => 'sf_campaign',
-				'posts_per_page' => 10,
+				'posts_per_page' => $options['limit_campaign'],
 				'post_status'    => 'publish',
+				'orderby'        => 'date',
+				'order'          => 'DESC',
 			) );
 			foreach ( $campaigns as $campaign ) {
-				$target    = (float) get_post_meta( $campaign->ID, '_sf_goal', true );
-				$collected = function_exists('sf_get_campaign_total') ? sf_get_campaign_total($campaign->ID) : (float) get_post_meta( $campaign->ID, '_sf_collected', true );
-				$slides[]  = array(
+				// Get collection data (using simple-fundraiser functions if available)
+				$target    = (float) get_post_meta( $campaign->ID, '_sf_target_amount', true );
+				$collected = (float) get_post_meta( $campaign->ID, '_sf_collected_amount', true );
+				
+				// QRIS & Bank Info
+				$qris_id   = get_post_meta( $campaign->ID, '_sf_qris_image_id', true );
+				$qris_url  = $qris_id ? wp_get_attachment_url( $qris_id ) : '';
+				
+				$slides[] = array(
+					'id'        => $campaign->ID,
+					'type'      => 'campaign',
+					'title'     => $campaign->post_title,
+					'src'       => get_the_post_thumbnail_url( $campaign->ID, 'full' ),
+					'target'    => $target,
+					'collected' => $collected,
+					'qrisUrl'   => $qris_url,
+					'bankName'  => get_post_meta( $campaign->ID, '_sf_bank_name', true ),
+					'accNumber' => get_post_meta( $campaign->ID, '_sf_account_number', true ),
+					'accHolder' => get_post_meta( $campaign->ID, '_sf_account_holder', true ),
+				);
+			}
+		}
 					'id'        => $campaign->ID,
 					'type'      => 'campaign',
 					'title'     => esc_html( $campaign->post_title ),
@@ -390,6 +421,58 @@ class MRTY_TV {
 			'mrty_tv_coordinates'
 		);
 
+		// --- Slider Limits Section ---
+		add_settings_section(
+			'mrty_tv_slider_limits',
+			'Limit Slider',
+			function () {
+				echo '<p>Batasi jumlah item yang ditampilkan di slider.</p>';
+			},
+			'mrty-tv'
+		);
+
+		add_settings_field(
+			'mrty_tv_limit_slide',
+			'Jumlah Slide Gambar',
+			function () {
+				$options = self::get_settings();
+				printf(
+					'<input type="number" name="mrty_tv_options[limit_slide]" value="%s" class="small-text" min="1" max="20" />',
+					esc_attr( $options['limit_slide'] )
+				);
+			},
+			'mrty-tv',
+			'mrty_tv_slider_limits'
+		);
+
+		add_settings_field(
+			'mrty_tv_limit_video',
+			'Jumlah Video (Terbaru)',
+			function () {
+				$options = self::get_settings();
+				printf(
+					'<input type="number" name="mrty_tv_options[limit_video]" value="%s" class="small-text" min="0" max="10" />',
+					esc_attr( $options['limit_video'] )
+				);
+			},
+			'mrty-tv',
+			'mrty_tv_slider_limits'
+		);
+
+		add_settings_field(
+			'mrty_tv_limit_campaign',
+			'Jumlah Campaign (Terbaru)',
+			function () {
+				$options = self::get_settings();
+				printf(
+					'<input type="number" name="mrty_tv_options[limit_campaign]" value="%s" class="small-text" min="0" max="10" />',
+					esc_attr( $options['limit_campaign'] )
+				);
+			},
+			'mrty-tv',
+			'mrty_tv_slider_limits'
+		);
+
 		// --- Prayer Time Adjustment Section ---
 		add_settings_section(
 			'mrty_tv_time_adjust',
@@ -449,6 +532,11 @@ class MRTY_TV {
 		// Coordinates
 		$output['latitude']  = isset( $input['latitude'] ) ? sanitize_text_field( $input['latitude'] ) : '';
 		$output['longitude'] = isset( $input['longitude'] ) ? sanitize_text_field( $input['longitude'] ) : '';
+
+		// Slider Limits
+		$output['limit_slide']    = isset( $input['limit_slide'] ) ? absint( $input['limit_slide'] ) : 10;
+		$output['limit_video']    = isset( $input['limit_video'] ) ? absint( $input['limit_video'] ) : 1;
+		$output['limit_campaign'] = isset( $input['limit_campaign'] ) ? absint( $input['limit_campaign'] ) : 1;
 
 		return $output;
 	}
