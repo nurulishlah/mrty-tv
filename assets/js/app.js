@@ -25,6 +25,10 @@ const App = {
             <running-text :items="runningText.items.value" />
 
             <prayer-overlay :engine="engine" />
+            
+            <div v-if="isSimulated" style="position:fixed;bottom:10px;right:10px;background:red;color:white;padding:5px;z-index:9999;font-weight:bold;border-radius:4px;">
+                SIMULATION MODE
+            </div>
         </div>
     `,
 
@@ -42,8 +46,9 @@ const App = {
         };
 
         // Initialize composables
-        const clock = useClock();
-        const engine = usePrayerEngine(settings);
+        const simulatedClock = useSimulatedClock();
+        const clock = useClock(simulatedClock.now);
+        const engine = usePrayerEngine(settings, simulatedClock.now);
         const slider = useSlider(engine.state);
 
         const autoRefresh = useAutoRefresh(settings);
@@ -56,7 +61,7 @@ const App = {
             runningText.fetchRunningText();
         });
 
-        return { clock, engine, slider, siteInfo, settings, runningText };
+        return { clock, engine, slider, siteInfo, settings, runningText, isSimulated: simulatedClock.isSimulated };
     }
 };
 

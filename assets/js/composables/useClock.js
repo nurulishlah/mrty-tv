@@ -4,7 +4,7 @@
  */
 // Vue globals (ref, onMounted, onUnmounted) provided by template setup script
 
-function useClock() {
+function useClock(simulatedNow) {
     const hours = ref('--');
     const minutes = ref('--');
     const seconds = ref('--');
@@ -21,7 +21,7 @@ function useClock() {
     let intervalId = null;
 
     function tick() {
-        const now = new Date();
+        const now = (simulatedNow && simulatedNow.value) ? simulatedNow.value : new Date();
         const h = String(now.getHours()).padStart(2, '0');
         const m = String(now.getMinutes()).padStart(2, '0');
         const s = String(now.getSeconds()).padStart(2, '0');

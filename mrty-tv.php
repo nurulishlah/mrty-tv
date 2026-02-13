@@ -29,7 +29,17 @@ class MRTY_TV {
 		'adj_sunrise'      => 0,
 		'adj_dhuhr'        => 0,
 		'adj_asr'          => 0,
+		'adj_asr'          => 0,
 		'adj_maghrib'      => 0,
+		'adj_isha'         => 0,
+
+		// Per-Prayer Overrides (0 = use global)
+		'iqamah_subuh'     => 0,
+		'iqamah_dzuhur'    => 0,
+		'iqamah_ashar'     => 0,
+		'iqamah_maghrib'   => 0,
+		'iqamah_isya'      => 0,
+		'sholat_jumat'     => 45, // Default 45 mins for Friday/Jumat sholat
 
 		// Slider Limits
 		'limit_slide'      => 10,
@@ -389,7 +399,60 @@ class MRTY_TV {
 				'mrty-tv',
 				'mrty_tv_prayer_engine'
 			);
+
 		}
+
+		// --- Per-Prayer Overrides Section ---
+		add_settings_section(
+			'mrty_tv_prayer_overrides',
+			'Durasi Per Sholat (Opsional)',
+			function () {
+				echo '<p>Isi jika ingin membedakan durasi Iqamah untuk sholat tertentu. Isi 0 untuk mengikuti pengaturan global di atas.</p>';
+			},
+			'mrty-tv'
+		);
+
+		$override_fields = array(
+			'iqamah_subuh'   => 'Iqamah Subuh',
+			'iqamah_dzuhur'  => 'Iqamah Dzuhur',
+			'iqamah_ashar'   => 'Iqamah Ashar',
+			'iqamah_maghrib' => 'Iqamah Maghrib',
+			'iqamah_isya'    => 'Iqamah Isya',
+		);
+
+		foreach ( $override_fields as $key => $label ) {
+			add_settings_field(
+				'mrty_tv_' . $key,
+				$label,
+				function () use ( $key ) {
+					$options = self::get_settings();
+					$val = isset( $options[ $key ] ) ? $options[ $key ] : 0;
+					printf(
+						'<input type="number" name="mrty_tv_options[%s]" value="%s" min="0" max="60" class="small-text" /> <span class="description">menit (0 = default)</span>',
+						esc_attr( $key ),
+						esc_attr( $val )
+					);
+				},
+				'mrty-tv',
+				'mrty_tv_prayer_overrides'
+			);
+		}
+
+		// Friday Special Duration
+		add_settings_field(
+			'mrty_tv_sholat_jumat',
+			'Durasi Sholat Jumat',
+			function () {
+				$options = self::get_settings();
+				$val = isset( $options['sholat_jumat'] ) ? $options['sholat_jumat'] : 45;
+				printf(
+					'<input type="number" name="mrty_tv_options[sholat_jumat]" value="%s" min="15" max="120" class="small-text" /> <span class="description">menit (Durasi Khutbah + Sholat)</span>',
+					esc_attr( $val )
+				);
+			},
+			'mrty-tv',
+			'mrty_tv_prayer_overrides'
+		);
 
 		// --- Manual Coordinates Section ---
 		add_settings_section(
@@ -537,7 +600,19 @@ class MRTY_TV {
 		foreach ( $adj_keys as $key ) {
 			$output[ $key ] = isset( $input[ $key ] ) ? intval( $input[ $key ] ) : 0;
 			$output[ $key ] = max( -30, min( 30, $output[ $key ] ) );
+			$output[ $key ] = max( -30, min( 30, $output[ $key ] ) );
 		}
+
+		// Per-Prayer Overrides
+		$override_keys = array( 'iqamah_subuh', 'iqamah_dzuhur', 'iqamah_ashar', 'iqamah_maghrib', 'iqamah_isya' );
+		foreach ( $override_keys as $key ) {
+			$output[ $key ] = isset( $input[ $key ] ) ? absint( $input[ $key ] ) : 0;
+			if ( $output[ $key ] > 60 ) $output[ $key ] = 60;
+		}
+
+		// Sholat Jumat
+		$output['sholat_jumat'] = isset( $input['sholat_jumat'] ) ? absint( $input['sholat_jumat'] ) : 45;
+		if ( $output['sholat_jumat'] < 10 ) $output['sholat_jumat'] = 45; // Safety minimum
 
 		// Coordinates
 		$output['latitude']  = isset( $input['latitude'] ) ? sanitize_text_field( $input['latitude'] ) : '';

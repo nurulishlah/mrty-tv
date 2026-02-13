@@ -24,7 +24,15 @@ const ENGINE_STATES = {
     SHOLAT: 'SHOLAT',
 };
 
-function usePrayerEngine(settings) {
+function usePrayerEngine(settings, simulatedNow) {
+    // --- Time Helpers ---
+    function getNowDate() {
+        return (simulatedNow && simulatedNow.value) ? simulatedNow.value : new Date();
+    }
+
+    function getNow() {
+        return getNowDate().getTime();
+    }
     // --- Reactive State ---
     const state = ref(ENGINE_STATES.NORMAL);
     const currentPrayer = ref(null);
@@ -51,14 +59,34 @@ function usePrayerEngine(settings) {
             Asr: parseInt(settings.value.adj_asr) || 0,
             Maghrib: parseInt(settings.value.adj_maghrib) || 0,
             Isha: parseInt(settings.value.adj_isha) || 0,
+            Isha: parseInt(settings.value.adj_isha) || 0,
+        },
+        overrides: {
+            iqamah: {
+                Fajr: parseInt(settings.value.iqamah_subuh) || 0,
+                Dhuhr: parseInt(settings.value.iqamah_dzuhur) || 0,
+                Asr: parseInt(settings.value.iqamah_ashar) || 0,
+                Maghrib: parseInt(settings.value.iqamah_maghrib) || 0,
+                Isha: parseInt(settings.value.iqamah_isya) || 0,
+            },
+            sholatJumat: parseInt(settings.value.sholat_jumat) || 45,
         }
     }));
+
+    // --- Helper: Dynamic Display Name (Jum'at exception) ---
+    function getDisplayName(key) {
+        if (key === 'Dhuhr') {
+            const now = getNowDate();
+            if (now.getDay() === 5) return "Jum'at"; (getNowDate)
+        }
+        return DISPLAY_NAMES[key];
+    }
 
     // --- Display data ---
     const prayerList = computed(() => {
         return PRAYER_NAMES.map(name => ({
             key: name,
-            name: DISPLAY_NAMES[name],
+            name: getDisplayName(name),
             icon: ICON_MAP[name],
             time: prayerTimes[name] || '--:--',
             isNext: nextPrayer.value === name,
@@ -68,7 +96,7 @@ function usePrayerEngine(settings) {
 
     // --- Prayer time calculation ---
     function fetchAndCalculate() {
-        const today = new Date();
+        const today = getNowDate();
         const dateKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
 
         // Skip if already calculated for today
@@ -119,7 +147,7 @@ function usePrayerEngine(settings) {
         const pt = new PrayTimes('Kemenag');
         pt.adjust({ fajr: 20, isha: 18, highLats: 'AngleBased' });
 
-        const today = new Date();
+        const today = getNowDate();
         const times = pt.getTimes(today, [lat, lng], 7, 'auto', '24h');
         const adj = config.value.adjustments;
 
@@ -151,7 +179,7 @@ function usePrayerEngine(settings) {
     }
 
     function nowMinutes() {
-        const now = new Date();
+        const now = getNowDate();
         return now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
     }
 
@@ -177,7 +205,7 @@ function usePrayerEngine(settings) {
     function engineTick() {
         if (!timesLoaded.value) return;
 
-        const now = new Date();
+        const now = getNowDate();
         const nowMins = nowMinutes();
         const currentState = state.value;
 
@@ -190,14 +218,14 @@ function usePrayerEngine(settings) {
 
         // --- TIMED STATES: Check if state has expired ---
         if (currentState !== ENGINE_STATES.NORMAL && currentState !== ENGINE_STATES.APPROACHING) {
-            if (stateEndTime.value && Date.now() >= stateEndTime.value) {
+            if (stateEndTime.value && getNow() >= stateEndTime.value) {
                 transitionFromTimedState(currentState);
                 return;
             }
 
             // Update countdown for timed states
             if (stateEndTime.value) {
-                const remainingSecs = Math.max(0, Math.floor((stateEndTime.value - Date.now()) / 1000));
+                const remainingSecs = Math.max(0, Math.floor((stateEndTime.value - getNow()) / 1000));
                 countdown.value = formatCountdown(remainingSecs);
             }
             return;
@@ -221,26 +249,42 @@ function usePrayerEngine(settings) {
         const approachThreshold = config.value.approachingMins;
 
         if (currentState === ENGINE_STATES.NORMAL) {
-            countdownLabel.value = `Menuju ${DISPLAY_NAMES[next]}`;
+            countdownLabel.value = `Menuju ${getDisplayName(next)}`;
             countdown.value = formatCountdown(diffSecs);
 
             if (diffMins <= approachThreshold && diffMins > 0) {
                 // Enter APPROACHING
                 state.value = ENGINE_STATES.APPROACHING;
                 currentPrayer.value = next;
-                countdownLabel.value = `Menuju Waktu Sholat ${DISPLAY_NAMES[next]}`;
+                countdownLabel.value = `Menuju Waktu Sholat ${getDisplayName(next)}`;
             } else if (diffMins <= 0 && diffMins > -1) {
                 // Prayer time reached, enter ADZAN (or skip for sunrise)
                 enterAdzanOrSkip(next);
             }
         } else if (currentState === ENGINE_STATES.APPROACHING) {
-            countdownLabel.value = `Menuju Waktu Sholat ${DISPLAY_NAMES[next]}`;
+            countdownLabel.value = `Menuju Waktu Sholat ${getDisplayName(next)}`;
             countdown.value = formatCountdown(diffSecs);
 
             if (diffMins <= 0) {
                 enterAdzanOrSkip(next);
             }
         }
+    }
+
+    function getIqamahDuration(prayer) {
+        const override = config.value.overrides?.iqamah?.[prayer];
+        return (override && override > 0) ? override : config.value.iqamahDuration;
+    }
+
+    function getSholatDuration(prayer) {
+        // Check for Friday Dhuhr (Jumu'ah)
+        if (prayer === 'Dhuhr') {
+            const now = getNowDate();
+            if (now.getDay() === 5) { // 5 = Friday
+                return config.value.overrides?.sholatJumat || 45;
+            }
+        }
+        return config.value.sholatDuration;
     }
 
     function enterAdzanOrSkip(prayer) {
@@ -253,8 +297,8 @@ function usePrayerEngine(settings) {
         }
 
         state.value = ENGINE_STATES.ADZAN;
-        stateEndTime.value = Date.now() + config.value.adzanDuration * 60 * 1000;
-        countdownLabel.value = `Adzan ${DISPLAY_NAMES[prayer]}`;
+        stateEndTime.value = getNow() + config.value.adzanDuration * 60 * 1000;
+        countdownLabel.value = `Adzan ${getDisplayName(prayer)}`;
         playBeep();
     }
 
@@ -263,12 +307,14 @@ function usePrayerEngine(settings) {
 
         if (currentState === ENGINE_STATES.ADZAN) {
             state.value = ENGINE_STATES.IQAMAH;
-            stateEndTime.value = Date.now() + config.value.iqamahDuration * 60 * 1000;
-            countdownLabel.value = `Iqamah ${DISPLAY_NAMES[prayer]}`;
+            const duration = getIqamahDuration(prayer);
+            stateEndTime.value = getNow() + duration * 60 * 1000;
+            countdownLabel.value = `Iqamah ${getDisplayName(prayer)}`;
         } else if (currentState === ENGINE_STATES.IQAMAH) {
             state.value = ENGINE_STATES.SHOLAT;
-            stateEndTime.value = Date.now() + config.value.sholatDuration * 60 * 1000;
-            countdownLabel.value = `Sholat ${DISPLAY_NAMES[prayer]} Sedang Berlangsung`;
+            const duration = getSholatDuration(prayer);
+            stateEndTime.value = getNow() + duration * 60 * 1000;
+            countdownLabel.value = `Sholat ${getDisplayName(prayer)} Sedang Berlangsung`;
         } else if (currentState === ENGINE_STATES.SHOLAT) {
             state.value = ENGINE_STATES.NORMAL;
             stateEndTime.value = null;
@@ -321,5 +367,6 @@ function usePrayerEngine(settings) {
         config,
         ENGINE_STATES,
         DISPLAY_NAMES,
+        getDisplayName,
     };
 }

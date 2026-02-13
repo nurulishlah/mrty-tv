@@ -66,7 +66,7 @@ $settings = MRTY_TV::get_settings();
                         $prayer_items = array(
                             'Fajr'    => array( 'name' => 'Subuh',   'icon' => 'icofont-night' ),
                             'Sunrise' => array( 'name' => 'Terbit',  'icon' => 'icofont-hill-sunny' ),
-                            'Dhuhr'   => array( 'name' => 'Dzuhur',  'icon' => 'icofont-full-sunny' ),
+                            'Dhuhr'   => array( 'name' => ( date( 'w' ) == 5 ) ? 'Jum\'at' : 'Dzuhur', 'icon' => 'icofont-full-sunny' ),
                             'Asr'     => array( 'name' => 'Ashar',   'icon' => 'icofont-hill-sunny' ),
                             'Maghrib' => array( 'name' => 'Maghrib', 'icon' => 'icofont-sun-set' ),
                             'Isha'    => array( 'name' => 'Isya',    'icon' => 'icofont-full-night' ),
@@ -118,6 +118,15 @@ $settings = MRTY_TV::get_settings();
             'adj_asr'          => $settings['adj_asr'],
             'adj_maghrib'      => $settings['adj_maghrib'],
             'adj_isha'         => $settings['adj_isha'],
+
+            
+            // Per-Prayer Overrides
+            'iqamah_subuh'     => $settings['iqamah_subuh'],
+            'iqamah_dzuhur'    => $settings['iqamah_dzuhur'],
+            'iqamah_ashar'     => $settings['iqamah_ashar'],
+            'iqamah_maghrib'   => $settings['iqamah_maghrib'],
+            'iqamah_isya'      => $settings['iqamah_isya'],
+            'sholat_jumat'     => $settings['sholat_jumat'],
         ) ); ?>;
     </script>
 
@@ -134,6 +143,7 @@ $settings = MRTY_TV::get_settings();
 
     <!-- Composables (order matters: dependencies first) -->
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/composables/useClock.js?v=' . MRTY_TV_VERSION ); ?>"></script>
+    <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/composables/useSimulatedClock.js?v=' . MRTY_TV_VERSION ); ?>"></script>
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/composables/usePrayerEngine.js?v=' . MRTY_TV_VERSION ); ?>"></script>
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/composables/useSlider.js?v=' . MRTY_TV_VERSION ); ?>"></script>
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/composables/useAutoRefresh.js?v=' . MRTY_TV_VERSION ); ?>"></script>

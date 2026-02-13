@@ -49,6 +49,9 @@ const PrayerOverlay = {
         },
         currentPrayerName() {
             const prayer = this.engine.currentPrayer.value;
+            if (this.engine.getDisplayName) {
+                return this.engine.getDisplayName(prayer);
+            }
             return this.engine.DISPLAY_NAMES[prayer] || prayer || '';
         },
         overlayClass() {
