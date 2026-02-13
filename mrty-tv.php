@@ -101,6 +101,12 @@ class MRTY_TV {
 			'callback'            => array( $this, 'get_slides_api' ),
 			'permission_callback' => '__return_true',
 		) );
+
+		register_rest_route( 'mrty-tv/v1', '/running-text', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_running_text_api' ),
+			'permission_callback' => '__return_true',
+		) );
 	}
 
 	/**
@@ -130,6 +136,49 @@ class MRTY_TV {
 	/**
 	 * Return slides data as JSON so Vue can render them reactively.
 	 */
+	public function get_running_text_api() {
+		$texts = array();
+
+		// 1. Static Custom Text
+		$static_text = get_theme_mod( 'run_text', '' );
+		if ( ! empty( $static_text ) ) {
+			$texts[] = array(
+				'type' => 'static',
+				'text' => wp_strip_all_tags( $static_text ),
+				'icon' => 'icofont-info-circle',
+			);
+		}
+
+		// 2. Dynamic Posts (Pengumuman, Agenda, Infaq, Wakaf)
+		$post_types = array(
+			'pengumuman' => 'icofont-megaphone-alt',
+			'agenda'     => 'icofont-calendar',
+			'infaq'      => 'icofont-money',
+			'wakaf'      => 'icofont-unity-hand',
+			'sf_campaign' => 'icofont-heart-alt',
+		);
+
+		foreach ( $post_types as $pt => $icon ) {
+			$posts = get_posts( array(
+				'post_type'      => $pt,
+				'posts_per_page' => 5, // Limit to latest 5 per type
+				'post_status'    => 'publish',
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			) );
+
+			foreach ( $posts as $post ) {
+				$texts[] = array(
+					'type' => $pt,
+					'text' => $post->post_title,
+					'icon' => $icon,
+				);
+			}
+		}
+
+		return rest_ensure_response( $texts );
+	}
+
 	public function get_slides_api() {
 		$slides = array();
 

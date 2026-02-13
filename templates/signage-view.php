@@ -137,6 +137,7 @@ $settings = MRTY_TV::get_settings();
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/composables/usePrayerEngine.js?v=' . MRTY_TV_VERSION ); ?>"></script>
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/composables/useSlider.js?v=' . MRTY_TV_VERSION ); ?>"></script>
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/composables/useAutoRefresh.js?v=' . MRTY_TV_VERSION ); ?>"></script>
+    <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/composables/useRunningText.js?v=' . MRTY_TV_VERSION ); ?>"></script>
 
     <!-- Components -->
     <script src="<?php echo esc_url( MRTY_TV_URL . 'assets/js/components/SignageHeader.js?v=' . MRTY_TV_VERSION ); ?>"></script>
