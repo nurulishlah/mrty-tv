@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MRTY TV
  * Description: Vue 3 digital signage display for Masjid Raya Taman Yasmin. Access via /signage
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Muhamad Ishlah
  * Text Domain: mrty-tv
  */
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'MRTY_TV_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MRTY_TV_URL', plugin_dir_url( __FILE__ ) );
-define( 'MRTY_TV_VERSION', '1.1.0' );
+define( 'MRTY_TV_VERSION', '1.2.0' );
 
 class MRTY_TV {
 
