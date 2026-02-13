@@ -232,7 +232,16 @@ function usePrayerEngine(settings, simulatedNow) {
         }
 
         // --- NORMAL / APPROACHING: Check prayer proximity ---
-        const next = findNextPrayer();
+        let next;
+
+        // FIX: If we are already APPROACHING a prayer, stick to it even if we just passed the minute mark.
+        // Otherwise findNextPrayer() skips to the following prayer immediately (e.g. 12:10:01 skips 12:10 Dhuhr).
+        if (currentState === ENGINE_STATES.APPROACHING && currentPrayer.value) {
+            next = currentPrayer.value;
+        } else {
+            next = findNextPrayer();
+        }
+
         nextPrayer.value = next;
 
         const nextTime = timeToMinutes(prayerTimes[next]);
@@ -265,8 +274,13 @@ function usePrayerEngine(settings, simulatedNow) {
             countdownLabel.value = `Menuju Waktu Sholat ${getDisplayName(next)}`;
             countdown.value = formatCountdown(diffSecs);
 
-            if (diffMins <= 0) {
+            if (diffMins <= 0 && diffMins > -1) {
                 enterAdzanOrSkip(next);
+            } else if (diffMins <= -1) {
+                // Missed the window significantly? Reset to NORMAL to find correct next prayer
+                console.warn('[PrayerEngine] Missed Adzan window, resetting state');
+                state.value = ENGINE_STATES.NORMAL;
+                currentPrayer.value = null;
             }
         }
     }
