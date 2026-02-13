@@ -1,19 +1,42 @@
 /**
- * RunningText component — Scrolling ticker at the bottom.
+ * RunningText Component
+ * Displays a scrolling marquee of text items with icons.
  */
 const RunningText = {
+    props: ['items'], // Expecting array of { type, text, icon }
     template: `
-        <footer class="signage-footer" v-if="text">
+        <div class="signage-footer">
             <div class="running-text-container">
-                <div class="running-text" ref="ticker">
-                    <span class="ticker-content">{{ text }}</span>
-                    <span class="ticker-spacer">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                    <span class="ticker-content">{{ text }}</span>
+                <div class="running-text">
+                    <span v-if="!items || items.length === 0">Loading...</span>
+                    
+                    <span v-for="(item, index) in items" :key="index" class="running-item">
+                        <i v-if="item.icon" :class="['running-icon', item.icon]"></i>
+                        {{ item.text }}
+                        <span class="separator" v-if="index < items.length - 1"> &nbsp;&bull;&nbsp; </span>
+                    </span>
+
+                    <!-- Duplicate for seamless loop (optional/simple check) -->
+                     <span class="separator"> &nbsp;&bull;&nbsp; </span>
+                    <span v-for="(item, index) in items" :key="'dup-' + index" class="running-item">
+                        <i v-if="item.icon" :class="['running-icon', item.icon]"></i>
+                        {{ item.text }}
+                        <span class="separator" v-if="index < items.length - 1"> &nbsp;&bull;&nbsp; </span>
+                    </span>
                 </div>
             </div>
-        </footer>
+        </div>
     `,
-    props: {
-        text: { type: String, default: '' },
-    }
+    styles: `
+        /* Add some specific styles for items if needed, mostly inherited from signage.css */
+        .running-item {
+            display: inline-flex;
+            align-items: center;
+        }
+        .separator {
+            margin: 0 10px;
+            color: var(--clr-accent);
+            opacity: 0.7;
+        }
+    `
 };

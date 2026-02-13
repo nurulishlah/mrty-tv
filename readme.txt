@@ -3,7 +3,7 @@ Contributors: muhamadishlah
 Tags: digital-signage, mosque, prayer-times, vue
 Requires at least: 5.9
 Tested up to: 6.7
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 Requires PHP: 7.4
 License: GPLv2 or later
 
@@ -28,6 +28,12 @@ Forked from WM Digital Signage with a complete frontend rewrite.
 * REST API endpoints for slides and settings
 
 == Changelog ==
+
+= 1.1.0 =
+* Feature: Added Dynamic Running Text (fetches latest posts from Pengumuman, Agenda, etc.)
+* Feature: Added Manual Coordinates setting for Prayer Times (no API dependency)
+* Feature: Added Slider Limits (limit quantity of Slides, Videos, Campaigns)
+* Fix: Standardized Campaign data in slider (Target, Collected, QRIS)
 
 = 1.0.0 =
 * Initial release — Vue 3 fork of WM Digital Signage v1.4.0
