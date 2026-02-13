@@ -22,7 +22,7 @@ const App = {
                 <prayer-sidebar :engine="engine" />
             </div>
 
-            <running-text :text="siteInfo.runningText" />
+            <running-text :items="runningText.items.value" />
 
             <prayer-overlay :engine="engine" />
         </div>
@@ -45,9 +45,11 @@ const App = {
         const clock = useClock();
         const engine = usePrayerEngine(settings);
         const slider = useSlider(engine.state);
-        const autoRefresh = useAutoRefresh(settings);
 
-        return { clock, engine, slider, siteInfo, settings };
+        const autoRefresh = useAutoRefresh(settings);
+        const runningText = useRunningText(settings.value.restUrl);
+
+        return { clock, engine, slider, siteInfo, settings, runningText };
     }
 };
 
