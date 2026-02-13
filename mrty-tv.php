@@ -58,6 +58,8 @@ class MRTY_TV {
 	 */
 	public function invalidate_hash_cache() {
 		delete_transient( self::HASH_TRANSIENT_KEY );
+		delete_transient( 'mrty_tv_slides_data' );
+		delete_transient( 'mrty_tv_running_text_data' );
 	}
 
 	public function add_endpoint() {
@@ -139,6 +141,12 @@ class MRTY_TV {
 	 * Return slides data as JSON so Vue can render them reactively.
 	 */
 	public function get_running_text_api() {
+		// Try to get from cache
+		$cached = get_transient( 'mrty_tv_running_text_data' );
+		if ( false !== $cached ) {
+			return rest_ensure_response( $cached );
+		}
+
 		$texts = array();
 
 		// 1. Static Custom Text
@@ -178,10 +186,20 @@ class MRTY_TV {
 			}
 		}
 
+
+		// Cache
+		set_transient( 'mrty_tv_running_text_data', $texts, DAY_IN_SECONDS );
+
 		return rest_ensure_response( $texts );
 	}
 
 	public function get_slides_api() {
+		// Try to get from cache
+		$cached = get_transient( 'mrty_tv_slides_data' );
+		if ( false !== $cached ) {
+			return rest_ensure_response( $cached );
+		}
+
 		$slides  = array();
 		$options = self::get_settings();
 
@@ -263,6 +281,9 @@ class MRTY_TV {
 				);
 			}
 		}
+
+		// Cache for a long time (only invalidated on save_post)
+		set_transient( 'mrty_tv_slides_data', $slides, DAY_IN_SECONDS );
 
 		return rest_ensure_response( $slides );
 	}
