@@ -241,24 +241,25 @@ class MRTY_TV {
 			) );
 			foreach ( $campaigns as $campaign ) {
 				// Get collection data (using simple-fundraiser functions if available)
-				$target    = (float) get_post_meta( $campaign->ID, '_sf_target_amount', true );
-				$collected = (float) get_post_meta( $campaign->ID, '_sf_collected_amount', true );
+				$target    = (float) get_post_meta( $campaign->ID, '_sf_goal', true );
+				$collected = function_exists('sf_get_campaign_total') ? sf_get_campaign_total($campaign->ID) : 0;
 				
 				// QRIS & Bank Info
-				$qris_id   = get_post_meta( $campaign->ID, '_sf_qris_image_id', true );
+				$qris_id   = get_post_meta( $campaign->ID, '_sf_qris_image', true );
 				$qris_url  = $qris_id ? wp_get_attachment_url( $qris_id ) : '';
 				
 				$slides[] = array(
-					'id'        => $campaign->ID,
-					'type'      => 'campaign',
-					'title'     => $campaign->post_title,
-					'src'       => get_the_post_thumbnail_url( $campaign->ID, 'full' ),
-					'target'    => $target,
-					'collected' => $collected,
-					'qrisUrl'   => $qris_url,
-					'bankName'  => get_post_meta( $campaign->ID, '_sf_bank_name', true ),
-					'accNumber' => get_post_meta( $campaign->ID, '_sf_account_number', true ),
-					'accHolder' => get_post_meta( $campaign->ID, '_sf_account_holder', true ),
+					'id'             => $campaign->ID,
+					'type'           => 'campaign',
+					'title'          => $campaign->post_title,
+					'image'          => get_the_post_thumbnail_url( $campaign->ID, 'full' ),
+					'target'         => $target,
+					'collected'      => $collected,
+					'progress'       => $target > 0 ? round( ( $collected / $target ) * 100, 1 ) : 0,
+					'qris'           => $qris_url,
+					'bank_name'      => get_post_meta( $campaign->ID, '_sf_bank_name', true ),
+					'account_number' => get_post_meta( $campaign->ID, '_sf_account_number', true ),
+					'account_holder' => get_post_meta( $campaign->ID, '_sf_account_holder', true ),
 				);
 			}
 		}
