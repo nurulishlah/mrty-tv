@@ -49,6 +49,13 @@ const App = {
         const autoRefresh = useAutoRefresh(settings);
         const runningText = useRunningText(settings.value.restUrl);
 
+        // Watch for auto-refresh updates (triggered by content hash change)
+        watch(() => autoRefresh.lastRefresh.value, () => {
+            console.log('[App] Auto-refresh triggered content update');
+            slider.fetchSlides();
+            runningText.fetchRunningText();
+        });
+
         return { clock, engine, slider, siteInfo, settings, runningText };
     }
 };
