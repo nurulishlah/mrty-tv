@@ -24,6 +24,7 @@ $settings = MRTY_TV::get_settings();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
     <!-- Plugin styles -->
     <link rel="stylesheet" href="<?php echo esc_url( MRTY_TV_URL . 'assets/css/signage.css?v=' . MRTY_TV_VERSION ); ?>">

@@ -11,17 +11,15 @@ const RunningText = {
                     <span v-if="!items || items.length === 0">Loading...</span>
                     
                     <span v-for="(item, index) in items" :key="index" class="running-item">
-                        <i v-if="item.icon" :class="['running-icon', item.icon]"></i>
+                        <i v-if="item.icon" class="running-icon material-symbols-outlined">{{ item.icon }}</i>
                         {{ item.text }}
-                        <span class="separator" v-if="index < items.length - 1"> &nbsp;&bull;&nbsp; </span>
                     </span>
 
                     <!-- Duplicate for seamless loop (optional/simple check) -->
                      <span class="separator"> &nbsp;&bull;&nbsp; </span>
                     <span v-for="(item, index) in items" :key="'dup-' + index" class="running-item">
-                        <i v-if="item.icon" :class="['running-icon', item.icon]"></i>
+                        <i v-if="item.icon" class="running-icon material-symbols-outlined">{{ item.icon }}</i>
                         {{ item.text }}
-                        <span class="separator" v-if="index < items.length - 1"> &nbsp;&bull;&nbsp; </span>
                     </span>
                 </div>
             </div>
@@ -32,6 +30,7 @@ const RunningText = {
         .running-item {
             display: inline-flex;
             align-items: center;
+            margin-right: 10px;
         }
         .separator {
             margin: 0 10px;

@@ -567,7 +567,7 @@ body {
 .signage-footer {
     display: flex;
     align-items: center;
-    padding: 20px 32px;
+    padding: 8px 10px;
     background: var(--clr-glass);
     backdrop-filter: blur(var(--blur));
     border: 1px solid var(--clr-glass-border);
@@ -584,11 +584,15 @@ body {
 .running-text {
     display: inline-flex;
     align-items: center;
-    font-size: 1.5rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--clr-text);
     padding-left: 100%;
     animation: marquee 120s linear infinite;
+}
+
+.running-item {
+    margin-right: 10px;
 }
 
 .running-icon {

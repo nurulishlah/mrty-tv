@@ -152,10 +152,10 @@ class MRTY_TV {
 	 */
 	public function get_running_text_api() {
 		// Try to get from cache
-		$cached = get_transient( 'mrty_tv_running_text_data' );
-		if ( false !== $cached ) {
-			return rest_ensure_response( $cached );
-		}
+		// $cached = get_transient( 'mrty_tv_running_text_data' );
+		// if ( false !== $cached ) {
+		// 	return rest_ensure_response( $cached );
+		// }
 
 		$texts = array();
 
@@ -164,18 +164,18 @@ class MRTY_TV {
 		if ( ! empty( $static_text ) ) {
 			$texts[] = array(
 				'type' => 'static',
-				'text' => wp_strip_all_tags( $static_text ),
-				'icon' => 'icofont-info-circle',
+				'text' => trim( preg_replace( '/\[\/?\w+(?:[^\]]*?)\]/', '', $static_text ) ),
+				'icon' => 'info',
 			);
 		}
 
 		// 2. Dynamic Posts (Pengumuman, Agenda, Infaq, Wakaf)
 		$post_types = array(
-			'pengumuman' => 'icofont-megaphone-alt',
-			'agenda'     => 'icofont-calendar',
-			'infaq'      => 'icofont-money',
-			'wakaf'      => 'icofont-unity-hand',
-			'sf_campaign' => 'icofont-heart-alt',
+			'pengumuman' => 'campaign',
+			'agenda'     => 'calendar_month',
+			'infaq'      => 'payments',
+			'wakaf'      => 'volunteer_activism',
+			'sf_campaign' => 'favorite',
 		);
 
 		foreach ( $post_types as $pt => $icon ) {
@@ -190,7 +190,7 @@ class MRTY_TV {
 			foreach ( $posts as $post ) {
 				$texts[] = array(
 					'type' => $pt,
-					'text' => $post->post_title,
+					'text' => trim( preg_replace( '/\[\/?\w+(?:[^\]]*?)\]/', '', $post->post_title ) ),
 					'icon' => $icon,
 				);
 			}
