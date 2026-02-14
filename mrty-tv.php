@@ -160,10 +160,10 @@ class MRTY_TV {
 	 */
 	public function get_running_text_api() {
 		// Try to get from cache
-		// $cached = get_transient( 'mrty_tv_running_text_data' );
-		// if ( false !== $cached ) {
-		// 	return rest_ensure_response( $cached );
-		// }
+		$cached = get_transient( 'mrty_tv_running_text_data' );
+		if ( false !== $cached ) {
+			return rest_ensure_response( $cached );
+		}
 
 		$texts = array();
 
