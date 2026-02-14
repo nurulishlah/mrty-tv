@@ -45,6 +45,14 @@ class MRTY_TV {
 		'limit_slide'      => 10,
 		'limit_video'      => 1, // Default to 1 (like wm-digisign)
 		'limit_campaign'   => 1, // Default to 1 (like wm-digisign)
+		
+		// Running Text Limits
+
+		'limit_pengumuman' => 1,
+		'limit_agenda'     => 1,
+		'limit_infaq'      => 1,
+		'limit_wakaf'      => 1,
+		'limit_sf_campaign' => 1,
 	);
 
 	const HASH_TRANSIENT_KEY = 'mrty_tv_content_hash';
@@ -181,7 +189,7 @@ class MRTY_TV {
 		foreach ( $post_types as $pt => $icon ) {
 			$posts = get_posts( array(
 				'post_type'      => $pt,
-				'posts_per_page' => 5, // Limit to latest 5 per type
+				'posts_per_page' => isset( self::get_settings()['limit_' . $pt] ) ? self::get_settings()['limit_' . $pt] : 1,
 				'post_status'    => 'publish',
 				'orderby'        => 'date',
 				'order'          => 'DESC',
@@ -546,6 +554,41 @@ class MRTY_TV {
 			'mrty_tv_slider_limits'
 		);
 
+		// --- Running Text Limits Section ---
+		add_settings_section(
+			'mrty_tv_running_text_limits',
+			'Limit Running Text',
+			function () {
+				echo '<p>Batasi jumlah item yang muncul di running text per kategori.</p>';
+			},
+			'mrty-tv'
+		);
+
+		$rt_limits = array(
+			'limit_pengumuman' => 'Pengumuman',
+			'limit_agenda'     => 'Agenda',
+			'limit_infaq'      => 'Infaq',
+			'limit_wakaf'      => 'Wakaf',
+			'limit_sf_campaign' => 'Campaign / Donasi',
+		);
+
+		foreach ( $rt_limits as $key => $label ) {
+			add_settings_field(
+				'mrty_tv_' . $key,
+				$label,
+				function () use ( $key ) {
+					$options = self::get_settings();
+					printf(
+						'<input type="number" name="mrty_tv_options[%s]" value="%s" class="small-text" min="0" max="20" />',
+						esc_attr( $key ),
+						esc_attr( $options[ $key ] )
+					);
+				},
+				'mrty-tv',
+				'mrty_tv_running_text_limits'
+			);
+		}
+
 		// --- Prayer Time Adjustment Section ---
 		add_settings_section(
 			'mrty_tv_time_adjust',
@@ -622,6 +665,13 @@ class MRTY_TV {
 		$output['limit_slide']    = isset( $input['limit_slide'] ) ? absint( $input['limit_slide'] ) : 10;
 		$output['limit_video']    = isset( $input['limit_video'] ) ? absint( $input['limit_video'] ) : 1;
 		$output['limit_campaign'] = isset( $input['limit_campaign'] ) ? absint( $input['limit_campaign'] ) : 1;
+
+		// Running Text Limits
+		$rt_keys = array( 'limit_pengumuman', 'limit_agenda', 'limit_infaq', 'limit_wakaf', 'limit_sf_campaign' );
+		foreach ( $rt_keys as $key ) {
+			$output[ $key ] = isset( $input[ $key ] ) ? absint( $input[ $key ] ) : 1;
+			if ( $output[ $key ] > 20 ) $output[ $key ] = 20; // Cap at 20
+		}
 
 		return $output;
 	}
