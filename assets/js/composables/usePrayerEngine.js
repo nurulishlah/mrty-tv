@@ -160,6 +160,58 @@ function usePrayerEngine(settings, simulatedNow) {
 
         timesLoaded.value = true;
         lastCalculatedDate.value = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+        // Check if we are currently inside an active state
+        checkInitialState();
+    }
+
+    function checkInitialState() {
+        const now = getNow();
+        const configVal = config.value;
+
+        for (const name of PRAYER_NAMES) {
+            if (name === 'Sunrise') continue; // Sunrise has no active state
+
+            const timeStr = prayerTimes[name];
+            if (!timeStr) continue;
+
+            const [h, m] = timeStr.split(':').map(Number);
+            const prayerDate = getNowDate();
+            prayerDate.setHours(h, m, 0, 0);
+            const prayerTime = prayerDate.getTime();
+
+            // Adzan Window
+            const adzanEnd = prayerTime + (configVal.adzanDuration * 60 * 1000);
+            if (now >= prayerTime && now < adzanEnd) {
+                state.value = ENGINE_STATES.ADZAN;
+                currentPrayer.value = name;
+                stateEndTime.value = adzanEnd;
+                countdownLabel.value = `Adzan ${getDisplayName(name)}`;
+                return;
+            }
+
+            // Iqamah Window
+            const iqamahDur = getIqamahDuration(name);
+            const iqamahEnd = adzanEnd + (iqamahDur * 60 * 1000);
+            if (now >= adzanEnd && now < iqamahEnd) {
+                state.value = ENGINE_STATES.IQAMAH;
+                currentPrayer.value = name;
+                stateEndTime.value = iqamahEnd;
+                countdownLabel.value = `Iqamah ${getDisplayName(name)}`;
+                return;
+            }
+
+            // Sholat Window
+            const sholatDur = getSholatDuration(name);
+            const sholatEnd = iqamahEnd + (sholatDur * 60 * 1000);
+            if (now >= iqamahEnd && now < sholatEnd) {
+                state.value = ENGINE_STATES.SHOLAT;
+                currentPrayer.value = name;
+                stateEndTime.value = sholatEnd;
+                countdownLabel.value = `Sholat ${getDisplayName(name)} Sedang Berlangsung`;
+                return;
+            }
+        }
     }
 
     function applyAdjustment(timeStr, adjMinutes) {

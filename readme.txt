@@ -3,7 +3,7 @@ Contributors: muhamadishlah
 Tags: digital-signage, mosque, prayer-times, vue
 Requires at least: 5.9
 Tested up to: 6.7
-Stable tag: 1.3.2
+Stable tag: 1.3.3
 Requires PHP: 7.4
 License: GPLv2 or later
 
@@ -36,6 +36,9 @@ Forked from WM Digital Signage with a complete frontend rewrite.
 * REST API endpoints for slides and settings
 
 == Changelog ==
+
+= 1.3.3 =
+* Fix: Prayer overlay now correctly restores active state (Adzan/Iqamah/Sholat) on page refresh
 
 = 1.3.2 =
 * Feature: Improved Video Slider to play full video duration (YouTube & MP4)
