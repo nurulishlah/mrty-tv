@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MRTY TV
  * Description: Vue 3 digital signage display for Masjid Raya Taman Yasmin. Access via /signage
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: Muhamad Ishlah
  * Text Domain: mrty-tv
  */
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'MRTY_TV_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MRTY_TV_URL', plugin_dir_url( __FILE__ ) );
-define( 'MRTY_TV_VERSION', '1.3.0' );
+define( 'MRTY_TV_VERSION', '1.3.1' );
 
 class MRTY_TV {
 
@@ -77,7 +77,7 @@ class MRTY_TV {
 	public function invalidate_hash_cache() {
 		delete_transient( self::HASH_TRANSIENT_KEY );
 		delete_transient( 'mrty_tv_slides_data' );
-		delete_transient( 'mrty_tv_running_text_data' );
+		delete_transient( 'mrty_tv_running_text_data_v2' );
 	}
 
 	public function add_endpoint() {
@@ -160,7 +160,7 @@ class MRTY_TV {
 	 */
 	public function get_running_text_api() {
 		// Try to get from cache
-		$cached = get_transient( 'mrty_tv_running_text_data' );
+		$cached = get_transient( 'mrty_tv_running_text_data_v2' );
 		if ( false !== $cached ) {
 			return rest_ensure_response( $cached );
 		}
@@ -186,10 +186,13 @@ class MRTY_TV {
 			'sf_campaign' => 'favorite',
 		);
 
-		foreach ( $post_types as $pt => $icon ) {
+		foreach ( $post_types as $pt_key => $icon ) {
+			// Map 'agenda' key to actual 'event' post type
+			$post_type_slug = ( $pt_key === 'agenda' ) ? 'event' : $pt_key;
+
 			$posts = get_posts( array(
-				'post_type'      => $pt,
-				'posts_per_page' => isset( self::get_settings()['limit_' . $pt] ) ? self::get_settings()['limit_' . $pt] : 1,
+				'post_type'      => $post_type_slug,
+				'posts_per_page' => isset( self::get_settings()['limit_' . $pt_key] ) ? self::get_settings()['limit_' . $pt_key] : 1,
 				'post_status'    => 'publish',
 				'orderby'        => 'date',
 				'order'          => 'DESC',
@@ -197,7 +200,7 @@ class MRTY_TV {
 
 			foreach ( $posts as $post ) {
 				$texts[] = array(
-					'type' => $pt,
+					'type' => $pt_key,
 					'text' => trim( preg_replace( '/\[\/?\w+(?:[^\]]*?)\]/', '', $post->post_title ) ),
 					'icon' => $icon,
 				);
@@ -206,7 +209,7 @@ class MRTY_TV {
 
 
 		// Cache
-		set_transient( 'mrty_tv_running_text_data', $texts, DAY_IN_SECONDS );
+		set_transient( 'mrty_tv_running_text_data_v2', $texts, DAY_IN_SECONDS );
 
 		return rest_ensure_response( $texts );
 	}

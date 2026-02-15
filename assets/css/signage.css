@@ -113,11 +113,13 @@ body {
 }
 
 .mosque-logo {
-    height: 64px;
+    height: 50px;
     width: auto;
     max-width: 160px;
     object-fit: contain;
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    background: white;
+    border-radius: 50%;
 }
 
 .mosque-text {
@@ -128,7 +130,7 @@ body {
 
 .mosque-name {
     font-size: 2rem;
-    font-weight: 700;
+    font-weight: 900;
     letter-spacing: -0.02em;
     color: var(--clr-text);
 }
@@ -151,7 +153,7 @@ body {
 
 .clock-display,
 .time-now {
-    font-size: 3rem;
+    font-size: 2rem;
     font-weight: 900;
     letter-spacing: -0.04em;
     color: var(--clr-text);
@@ -539,7 +541,7 @@ body {
 /* ===== Countdown Box ===== */
 .countdown-box {
     margin-top: auto;
-    padding: 20px;
+    padding: 10px;
     text-align: center;
     background: linear-gradient(135deg, var(--clr-primary) 0%, rgba(6, 78, 59, 0.8) 100%);
     border-radius: var(--radius-md);
@@ -555,7 +557,7 @@ body {
 }
 
 .countdown-timer {
-    font-size: 3rem;
+    font-size: 2rem;
     font-weight: 800;
     color: var(--clr-accent);
     letter-spacing: -2px;
@@ -634,7 +636,7 @@ body {
 
     .clock-display,
     .time-now {
-        font-size: 4rem;
+        font-size: 2rem;
     }
 
     .mosque-name {
@@ -684,9 +686,6 @@ body {
         font-size: 1.3rem;
     }
 
-    .countdown-timer {
-        font-size: 2.6rem;
-    }
 }
 
 /* --- 1024px: Small TVs / Large Tablets --- */
@@ -729,7 +728,7 @@ body {
 
     .clock-display,
     .time-now {
-        font-size: 3rem;
+        font-size: 2rem;
     }
 
     .date-display {
