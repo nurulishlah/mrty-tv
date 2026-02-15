@@ -14,12 +14,8 @@ const ContentSlider = {
 
                     <!-- Video Slide -->
                     <div v-else-if="slider.currentSlide.value.type === 'video'" class="slide slide-video">
-                        <iframe
-                            :src="embedUrl(slider.currentSlide.value.src)"
-                            frameborder="0"
-                            allow="autoplay; encrypted-media"
-                            allowfullscreen
-                        ></iframe>
+                        <div v-if="isYoutube(slider.currentSlide.value.src)" :id="'yt-player-' + slider.currentSlide.value.id" class="yt-player-container"></div>
+                        <video v-else :src="slider.currentSlide.value.src" autoplay muted @ended="onVideoEnded" class="native-video"></video>
                     </div>
 
                     <!-- Campaign Slide -->
@@ -96,22 +92,109 @@ const ContentSlider = {
     props: {
         slider: { type: Object, required: true },
     },
-    methods: {
-        embedUrl(url) {
-            if (!url) return '';
-            // Convert youtube watch URL to embed
-            const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
-            if (ytMatch) {
-                return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&controls=0`;
-            }
-            return url;
-        },
-        formatCurrency(val) {
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
-        },
-        campaignBg(imageUrl) {
-            if (!imageUrl) return {};
-            return { backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${imageUrl})` };
+    setup(props) {
+        const player = ref(null);
+
+        // Load YouTube API
+        if (!window.YT) {
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
         }
+
+        const isYoutube = (url) => {
+            return /youtube\.com\/watch\?v=|youtu\.be\//.test(url);
+        };
+
+        const getYoutubeId = (url) => {
+            const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+            return match ? match[1] : null;
+        };
+
+        const onPlayerStateChange = (event) => {
+            // YT.PlayerState.ENDED = 0
+            if (event.data === 0) {
+                props.slider.next();
+            }
+        };
+
+        const onVideoEnded = () => {
+            props.slider.next();
+        };
+
+        // Preload next slide image to avoid white flash
+        const preloadNext = (index) => {
+            const slides = props.slider.slides.value;
+            if (!slides || slides.length === 0) return;
+
+            const nextIndex = (index + 1) % slides.length;
+            const nextSlide = slides[nextIndex];
+
+            if (nextSlide) {
+                if (nextSlide.type === 'image' && nextSlide.src) {
+                    const img = new Image();
+                    img.src = nextSlide.src;
+                } else if (nextSlide.type === 'campaign' && nextSlide.image) {
+                    const img = new Image();
+                    img.src = nextSlide.image;
+                }
+            }
+        };
+
+        // Watch for slide changes to preload next
+        watch(() => props.slider.currentIndex.value, (newIndex) => {
+            preloadNext(newIndex);
+        }, { immediate: true });
+
+        // Watch for slide changes to init player
+        watch(() => props.slider.currentSlide.value, (newSlide) => {
+            if (newSlide?.type === 'video' && isYoutube(newSlide.src)) {
+                nextTick(() => {
+                    const videoId = getYoutubeId(newSlide.src);
+                    const containerId = 'yt-player-' + newSlide.id;
+
+                    if (window.YT && window.YT.Player) {
+                        player.value = new YT.Player(containerId, {
+                            height: '100%',
+                            width: '100%',
+                            videoId: videoId,
+                            playerVars: {
+                                'autoplay': 1,
+                                'controls': 0,
+                                'rel': 0,
+                                'fs': 0,
+                            },
+                            events: {
+                                'onStateChange': onPlayerStateChange
+                            }
+                        });
+                    } else {
+                        // Retry if API not ready
+                        const checkYT = setInterval(() => {
+                            if (window.YT && window.YT.Player) {
+                                clearInterval(checkYT);
+                                player.value = new YT.Player(containerId, {
+                                    height: '100%',
+                                    width: '100%',
+                                    videoId: videoId,
+                                    playerVars: {
+                                        'autoplay': 1,
+                                        'controls': 0,
+                                        'rel': 0,
+                                        'fs': 0,
+                                    },
+                                    events: {
+                                        'onStateChange': onPlayerStateChange
+                                    }
+                                });
+                            }
+                        }, 500);
+                    }
+                });
+            }
+        });
+
+        return { isYoutube, onVideoEnded, embedUrl: (url) => url }; // embedUrl kept for fallback/legacy if needed
     }
 };

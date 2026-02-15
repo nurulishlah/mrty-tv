@@ -26,8 +26,24 @@ function useSlider(engineState) {
         clearTimeout(timerId);
         if (isPaused.value || slides.value.length === 0) return;
         const slide = currentSlide.value;
-        const duration = DURATIONS[slide?.type] || DURATIONS.image;
+
+        // If video, set a very long fallback (5 mins) and wait for manual advance
+        // Otherwise use standard duration
+        const isVideo = slide?.type === 'video';
+        const duration = isVideo ? 300000 : (DURATIONS[slide?.type] || DURATIONS.image);
+
         timerId = setTimeout(advance, duration);
+    }
+
+    function next() {
+        advance();
+    }
+
+    function jump(index) {
+        if (index >= 0 && index < slides.value.length) {
+            currentIndex.value = index;
+            scheduleNext();
+        }
     }
 
     function pause() {
@@ -72,5 +88,5 @@ function useSlider(engineState) {
         clearTimeout(timerId);
     });
 
-    return { slides, currentSlide, currentIndex, isLoading, isPaused, fetchSlides };
+    return { slides, currentSlide, currentIndex, isLoading, isPaused, fetchSlides, next, jump };
 }
